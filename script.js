@@ -1,46 +1,88 @@
-const apiKey = "AIzaSyAuU7HbgSQgKWIycAIA7slV4yKQibmiFyE"; // Reemplaza con tu clave de API
-
-
 async function sendMessage() {
-    const userInput = document.getElementById("user-input").value.trim();
+
+    const userInput =
+        document.getElementById("user-input").value.trim();
+
     if (!userInput) return;
 
-    const chatBox = document.getElementById("chat-box");
-    chatBox.innerHTML += `<div class="message user-message"><strong>Tú:</strong> ${userInput}</div>`;
+    const chatBox =
+        document.getElementById("chat-box");
 
-    document.getElementById("user-input").value = ""; // Limpiar input
-    chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll al final
+    chatBox.innerHTML += `
+        <div class="message user-message">
+            <strong>Tú:</strong> ${userInput}
+        </div>
+    `;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-    const data = {
-        contents: [{ parts: [{ text: userInput }] }]
-    };
+    document.getElementById("user-input").value = "";
+
+    chatBox.scrollTop = chatBox.scrollHeight;
 
     try {
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        });
+
+        const response = await fetch(
+            "http://localhost:3000/api/chat",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    message: userInput
+                })
+            }
+        );
 
         const result = await response.json();
-        const aiResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "Error al obtener respuesta.";
 
-        chatBox.innerHTML += `<div class="message ai-message"><strong>IA:</strong> ${aiResponse}</div>`;
-        chatBox.scrollTop = chatBox.scrollHeight; // Mantener scroll abajo
+        console.log("Respuesta del servidor:", result);
+
+        if (!response.ok) {
+            throw new Error(
+                result.error || `Error HTTP ${response.status}`
+            );
+        }
+
+        const aiResponse =
+            result.response ||
+            "No recibí respuesta de Gemini.";
+
+        chatBox.innerHTML += `
+            <div class="message ai-message">
+                <strong>IA:</strong> ${aiResponse}
+            </div>
+        `;
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+
     } catch (error) {
-        chatBox.innerHTML += `<div class="message ai-message"><strong>IA:</strong> Error en la solicitud.</div>`;
+
+        console.error("Error:", error);
+
+        chatBox.innerHTML += `
+            <div class="message ai-message">
+                <strong>IA:</strong> Error: ${error.message}
+            </div>
+        `;
     }
 }
 
-// Permitir enviar con Enter
-document.getElementById("user-input").addEventListener("keypress", function(event) {
-    if (event.key === "Enter") {
-        sendMessage();
-    }
-});
 
-// Botón limpiar chat
+document
+    .getElementById("user-input")
+    .addEventListener("keypress", function(event) {
+
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+
+    });
+
+
 function clearChat() {
+
     document.getElementById("chat-box").innerHTML = "";
+
 }
